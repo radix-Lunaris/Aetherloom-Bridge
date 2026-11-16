@@ -3,7 +3,7 @@ loaderVersion="[47,)"
 license="GPL-3.0-only"
 [[mods]]
 modId="aetherloom_bridge"
-version="0.1.0"
+version="0.1.1"
 displayName="Aetherloom Bridge"
 description='''Managed local-world lifecycle and automatic LAN control.'''
 displayTest="IGNORE_ALL_VERSION"

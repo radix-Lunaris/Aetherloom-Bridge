@@ -68,6 +68,7 @@ public class Bridge {
 
     private void negotiate(PlayerNegotiationEvent negotiation) {
         if (config.has("join") || config.get("inspect").getAsBoolean()) return;
+        if (negotiation.getConnection().isMemoryConnection()) return;
         // Vanilla offline LAN derives UUID from the name. Apply the identity
         // attached to this authenticated software member's scoped relay stream
         // before login acceptance loads playerdata; never infer ownership by name.
@@ -79,8 +80,16 @@ public class Bridge {
                 HttpResponse<String> response = http.send(req,HttpResponse.BodyHandlers.ofString());
                 if (response.statusCode()!=200) throw new IllegalStateException("Identity lookup rejected");
                 JsonObject identity=gson.fromJson(response.body(),JsonObject.class);
-                if (!identity.has("uuid") || identity.get("uuid").isJsonNull()) return;
+                if (!identity.has("uuid") || identity.get("uuid").isJsonNull()) {
+                    if (config.has("auth_mode") && config.get("auth_mode").getAsString().equals("littleskin"))
+                        throw new IllegalStateException("LittleSkin peer is not registered");
+                    return;
+                }
                 UUID id=UUID.fromString(identity.get("uuid").getAsString());
+                if (config.has("auth_mode") && config.get("auth_mode").getAsString().equals("littleskin")) {
+                    if (!id.equals(negotiation.getProfile().getId())) throw new IllegalStateException("Verified LittleSkin UUID mismatch");
+                    return; // Preserve the authenticated profile and signed texture properties.
+                }
                 java.lang.reflect.Field field=com.mojang.authlib.GameProfile.class.getDeclaredField("id");
                 field.setAccessible(true);field.set(negotiation.getProfile(),id);
                 if (!id.equals(negotiation.getProfile().getId())) throw new IllegalStateException("UUID update failed");
@@ -116,7 +125,7 @@ public class Bridge {
             int port = 0;
             if (!config.has("inspect") || !config.get("inspect").getAsBoolean()) {
                 try (ServerSocket socket = new ServerSocket(0)) { port = socket.getLocalPort(); }
-                server.setUsesAuthentication(false);
+                server.setUsesAuthentication(config.has("auth_mode") && config.get("auth_mode").getAsString().equals("littleskin"));
                 if (!server.publishServer(server.getDefaultGameType(), false, port))
                     throw new IllegalStateException("Unable to publish selected world");
             }

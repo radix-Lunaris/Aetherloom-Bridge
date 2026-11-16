@@ -41,3 +41,13 @@ Player额外提供 `join: "127.0.0.1:本地游戏代理端口"`，并使用隔�
 本仓库从Aetherloom的bridge模块独立提取，保留独立测试夹具。原应用仍可固定版本引入此源码；不引入HMCL/PCL源码。
 
 Bridge代码使用GNU GPLv3（见LICENSE）。Gradle包装器来自Forge官方MDK，独立保留其Apache-2.0许可LICENSE.gradle；Forge/Minecraft/Gradle依赖保持各自许可。真实游戏、双机、NAT、更多Mod兼容性应结合控制端分别验证。
+
+## 0.1.1: external-login rooms
+
+Control configuration may specify `auth_mode=littleskin`. In this mode LAN uses
+online authentication; the embedding launcher must inject authlib-injector on
+both Host and Player with the same provider. Verified profile UUIDs must match
+the software-authorized peer identity; signed texture properties are preserved.
+No identity rewriting is performed for verified profiles. Host in-memory login
+is distinguished from remote players. Default remains offline; no account or
+credential handling is included in this Mod.
