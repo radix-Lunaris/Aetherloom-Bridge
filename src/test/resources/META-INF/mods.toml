@@ -1,0 +1,9 @@
+modLoader="javafml"
+loaderVersion="[47,)"
+license="GPL-3.0-only"
+[[mods]]
+modId="aetherloom_fixture"
+version="0.1.0"
+displayName="Aetherloom Test Fixture (not distributed)"
+description="Creates a separate empty test world only when explicitly configured."
+displayTest="IGNORE_ALL_VERSION"

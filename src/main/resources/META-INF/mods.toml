@@ -1,0 +1,21 @@
+modLoader="javafml"
+loaderVersion="[47,)"
+license="GPL-3.0-only"
+[[mods]]
+modId="aetherloom_bridge"
+version="0.1.0"
+displayName="Aetherloom Bridge"
+description='''Managed local-world lifecycle and automatic LAN control.'''
+displayTest="IGNORE_ALL_VERSION"
+[[dependencies.aetherloom_bridge]]
+modId="forge"
+mandatory=true
+versionRange="[47,)"
+ordering="NONE"
+side="CLIENT"
+[[dependencies.aetherloom_bridge]]
+modId="minecraft"
+mandatory=true
+versionRange="[1.20.1,1.20.2)"
+ordering="NONE"
+side="CLIENT"
