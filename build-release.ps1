@@ -1,7 +1,10 @@
+param([switch]$Offline)
 $ErrorActionPreference='Stop'
 Set-Location $PSScriptRoot
 if (-not $env:JAVA_HOME) { throw 'Set JAVA_HOME to JDK17' }
-& ./gradlew.bat build --no-daemon --console plain
+$extra=@()
+if ($Offline) { $extra=@('--offline','-Dnet.minecraftforge.gradle.check.certs=false') }
+& ./gradlew.bat build --no-daemon --console plain @extra
 if ($LASTEXITCODE -ne 0) { throw 'Forge build failed' }
 New-Item -ItemType Directory -Force release | Out-Null
 Copy-Item build/libs/aetherloom-bridge-0.1.1.jar release/aetherloom-bridge-0.1.1.jar -Force
