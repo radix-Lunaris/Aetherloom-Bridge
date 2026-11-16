@@ -75,7 +75,9 @@ public class Bridge {
         negotiation.enqueueWork(() -> {
             try {
                 String name = negotiation.getProfile().getName();
-                HttpRequest req = HttpRequest.newBuilder(URI.create(config.get("endpoint").getAsString()+"/identity/"+URLEncoder.encode(name,StandardCharsets.UTF_8)))
+                boolean external=config.has("auth_mode") && config.get("auth_mode").getAsString().equals("littleskin");
+                String lookup=external?"by-uuid/"+negotiation.getProfile().getId():URLEncoder.encode(name,StandardCharsets.UTF_8);
+                HttpRequest req = HttpRequest.newBuilder(URI.create(config.get("endpoint").getAsString()+"/identity/"+lookup))
                     .header("Authorization","Bearer "+config.get("token").getAsString()).timeout(Duration.ofSeconds(3)).GET().build();
                 HttpResponse<String> response = http.send(req,HttpResponse.BodyHandlers.ofString());
                 if (response.statusCode()!=200) throw new IllegalStateException("Identity lookup rejected");
