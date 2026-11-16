@@ -27,6 +27,7 @@ import java.net.http.HttpResponse;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Duration;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /** Inert without a per-launch configuration supplied by Aetherloom. */
 @Mod("aetherloom_bridge")
@@ -44,6 +45,8 @@ public class Bridge {
     private boolean connecting = false;
     private boolean joined = false;
     private volatile boolean finished = false;
+    private long nextStats=0;
+    private final AtomicBoolean statsPending=new AtomicBoolean();
 
     public Bridge() {
         String file = System.getenv("AETHERLOOM_BRIDGE_FILE");
@@ -82,11 +85,7 @@ public class Bridge {
                 HttpResponse<String> response = http.send(req,HttpResponse.BodyHandlers.ofString());
                 if (response.statusCode()!=200) throw new IllegalStateException("Identity lookup rejected");
                 JsonObject identity=gson.fromJson(response.body(),JsonObject.class);
-                if (!identity.has("uuid") || identity.get("uuid").isJsonNull()) {
-                    if (config.has("auth_mode") && config.get("auth_mode").getAsString().equals("littleskin"))
-                        throw new IllegalStateException("LittleSkin peer is not registered");
-                    return;
-                }
+                if (!identity.has("uuid") || identity.get("uuid").isJsonNull()) throw new IllegalStateException("Peer is not registered");
                 UUID id=UUID.fromString(identity.get("uuid").getAsString());
                 if (config.has("auth_mode") && config.get("auth_mode").getAsString().equals("littleskin")) {
                     if (!id.equals(negotiation.getProfile().getId())) throw new IllegalStateException("Verified LittleSkin UUID mismatch");
@@ -197,6 +196,14 @@ public class Bridge {
     private void tick(TickEvent.ClientTickEvent event) {
         if (event.phase != TickEvent.Phase.END) return;
         Minecraft mc = Minecraft.getInstance();
+        if (loaded && System.currentTimeMillis()>=nextStats && statsPending.compareAndSet(false,true)) {
+            nextStats=System.currentTimeMillis()+2000;
+            int count=mc.getSingleplayerServer()!=null?mc.getSingleplayerServer().getPlayerCount():mc.getConnection()!=null?mc.getConnection().getOnlinePlayers().size():0;
+            JsonObject data=new JsonObject();data.addProperty("event","stats");data.addProperty("players",count);
+            data.addProperty("world",config.get("world").getAsString());data.addProperty("uuid",config.get("identity").getAsString());
+            http.sendAsync(request().POST(HttpRequest.BodyPublishers.ofString(gson.toJson(data))).build(),HttpResponse.BodyHandlers.discarding())
+                .whenComplete((response,error)->statsPending.set(false));
+        }
         if (config.has("join")) join(mc);
         if (finished && mc.level == null && mc.getSingleplayerServer() == null) {
             finished = false;
